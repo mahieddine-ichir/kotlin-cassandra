@@ -1,36 +1,56 @@
 package poc
 
-import com.datastax.driver.core.Cluster
-import com.datastax.driver.core.Session
-import org.springframework.beans.factory.annotation.Value
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
-import org.springframework.boot.runApplication
-import org.springframework.context.annotation.Bean
+import org.springframework.core.env.Environment
+import org.springframework.core.env.get
+import org.springframework.data.cassandra.config.AbstractCassandraConfiguration
 import org.springframework.data.cassandra.config.SchemaAction
 import org.springframework.data.cassandra.repository.config.EnableCassandraRepositories
+import poc.model.BillDetail
+import poc.model.TrackingBilling
+import poc.repositories.BillingsRepository
+import java.util.*
+import javax.annotation.PostConstruct
 
 @SpringBootApplication
 @EnableCassandraRepositories
-open class Application {
+open class Application : AbstractCassandraConfiguration() {
 
-    @Value("\${cassandra.contactpoints}")
-    lateinit var contactPoints: String
+    @Autowired
+    lateinit var env: Environment
 
-    @Value("\${cassandra.keyspace}")
-    lateinit var keyspace: String
+    override fun getContactPoints(): String {
+        return env["contactPoints"]
+    }
 
-    @Value("\${cassandra.schema_action:none}")
-    lateinit var schemaAction: String
+    override fun getKeyspaceName(): String {
+        return env["keySpace"]
+    }
 
-    @Bean
-    open fun session() = Cluster.builder().addContactPoint(contactPoints).build()
-        .let { cluster -> cluster.connect(keyspace) }
+    override fun getSchemaAction(): SchemaAction {
+        return env.getProperty("schemaAction", "none").let { SchemaAction.valueOf(it.toUpperCase()) }
+    }
 
-    @Bean
-    open fun schemaAction() = SchemaAction.valueOf(schemaAction.toUpperCase())
+    @Autowired
+    lateinit var repo: BillingsRepository
+
+    @PostConstruct
+    fun init() {
+        (0..100).forEach{
+            var codeClient = "codeClient_" + (it % 5)
+            var refUser = "user_" + (it % 10)
+            var refMaileva = "20181211${it}"
+            repo.save(TrackingBilling(UUID.randomUUID(), "campaign1", codeClient, listOf(BillDetail("designation", 2, 1.0, "product", 2.3)), refUser, refMaileva, "refClient${it}", "product${it}"))
+        }
+    }
+
 }
 
 fun main(args: Array<String>) {
-    runApplication<Application>(*args)
+    SpringApplication.run(Application::class.java, *args)
+    //runApplication<Application>(*args)
 }
+
 
