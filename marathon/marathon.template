@@ -1,0 +1,70 @@
+{
+  "id": "appID",
+  "backoffFactor": 1.15,
+  "backoffSeconds": 1,
+  "container": {
+    "type": "MESOS",
+    "volumes": [
+    ],
+    "docker": {
+      "image": "imageName",
+	  "pullConfig": {
+        "secret": "pullConfigSecret"
+      }
+    },
+    "portMappings": [
+      {
+        "containerPort": 8080,
+        "labels": {
+          "VIP_0": "appID:8080"
+        },
+        "protocol": "tcp"
+      }
+    ]
+  },
+  "cpus": 1,
+  "disk": 0,
+  "env": ${marathon-env},
+  "fetch": [],
+  "instances": 1,
+  "labels": {
+    "HAPROXY_0_VHOST": "${api-external-url}",
+    "HAPROXY_GROUP": "external",
+    "HAPROXY_0_PATH": "${api-context}"
+  },
+  "secrets": {
+	"pullConfigSecret": {
+      "source": "docker-registry-auth"
+    }
+  },
+  "maxLaunchDelaySeconds": 3600,
+  "mem": 6144,
+  "gpus": 0,
+  "networks": [
+    {
+      "mode": "container/bridge"
+    }
+  ],
+  "requirePorts": false,
+  "upgradeStrategy": {
+    "maximumOverCapacity": 1,
+    "minimumHealthCapacity": 1
+  },
+  "killSelection": "YOUNGEST_FIRST",
+  "unreachableStrategy": {
+    "inactiveAfterSeconds": 0,
+    "expungeAfterSeconds": 0
+  },
+  "healthChecks": [
+	{
+      "gracePeriodSeconds": 300,
+      "intervalSeconds": 5,
+      "maxConsecutiveFailures": 3,
+      "portIndex": 0,
+      "timeoutSeconds": 20,
+      "delaySeconds": 15,
+      "protocol": "MESOS_HTTP",
+      "path": "${healthcheck_uri}"
+    }],
+  "constraints": []
+}
