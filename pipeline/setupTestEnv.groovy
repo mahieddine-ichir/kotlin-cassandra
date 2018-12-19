@@ -1,4 +1,4 @@
 def setupTestEnv() {
 }
 
-return this;
+return this
